@@ -32,8 +32,7 @@ async def setup_database():
 
 class ComponentBase(Base):
     __abstract__ = True
-    id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column()
+    name: Mapped[str] = mapped_column(primary_key=True)
     consumption: Mapped[str] = mapped_column()
 
 class CPU(ComponentBase):
@@ -43,22 +42,14 @@ class CPU(ComponentBase):
 class GPU(ComponentBase):
     __tablename__ = "gpus"
 
-
 class RAM(ComponentBase):
     __tablename__ = "ram"
-
-    memory_type: Mapped[str] = mapped_column()
-    capacity: Mapped[int] = mapped_column()
-    speed: Mapped[int] = mapped_column()
-    latency: Mapped[str] = mapped_column()
 
 class Storage(ComponentBase):
     __tablename__ = "storages"
 
-
 class PSU(ComponentBase):
     __tablename__ = "psus"
-
 
 class Cooling(ComponentBase):
     __tablename__ = "cooling"
@@ -77,10 +68,6 @@ class GPUCreate(BaseModel):
 class RAMCreate(BaseModel):
     name: str
     consumption: float
-    memory_type: str
-    capacity: int
-    speed: int
-    # ???
 
 class PSUCreate(BaseModel):
     name: str
@@ -232,21 +219,21 @@ async def get_ram(ram_name: str, session: SessionDep):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching RAM: {str(e)}")
 
-@app.get("/storages/{storage_type}{number}")
-async def get_storages(storage_type: str, number: int, session: SessionDep):
-    try:
-        result = await session.execute(
-            select(Storage).where(Storage.name.ilike(f"%{storage_type}%"))
-        )
-        storages = result.scalars().all()
-        if not storages:
-            raise HTTPException(status_code=404, detail="Storages not found")
-
-        return {"success": True, "data": storages}
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error fetching Storages: {str(e)}")
+# @app.get("/storages/{storage_type}{number}")
+# async def get_storages(storage_type: str, number: int, session: SessionDep):
+#     try:
+#         result = await session.execute(
+#             select(Storage).where(Storage.name.ilike(f"%{storage_type}%"))
+#         )
+#         storages = result.scalars().all()
+#         if not storages:
+#             raise HTTPException(status_code=404, detail="Storages not found")
+#
+#         return {"success": True, "data": storages}
+#     except HTTPException:
+#         raise
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"Error fetching Storages: {str(e)}")
 
 @app.get("/cooling/{cooling_name}")
 async def get_cooling(cooling_name: str, session: SessionDep):
