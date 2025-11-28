@@ -55,11 +55,6 @@ class RAM(ComponentBase):
 class Storage(ComponentBase):
     __tablename__ = "storages"
 
-    type: Mapped[str] = mapped_column()
-    capacity: Mapped[int] = mapped_column()
-    interface: Mapped[str] = mapped_column()
-    read_speed: Mapped[Optional[int]] = mapped_column(nullable=True)
-    write_speed: Mapped[Optional[int]] = mapped_column(nullable=True)
 
 class PSU(ComponentBase):
     __tablename__ = "psus"
@@ -68,7 +63,6 @@ class PSU(ComponentBase):
 class Cooling(ComponentBase):
     __tablename__ = "cooling"
 
-    type: Mapped[str] = mapped_column()
     size: Mapped[str] = mapped_column()
     has_led: Mapped[bool] = mapped_column(default=False)
 
@@ -94,11 +88,8 @@ class PSUCreate(BaseModel):
 
 class StorageCreate(BaseModel):
     name: str
-    manufacturer: str
+    type: str
     consumption: float
-    memory_type: str
-    capacity: int
-    speed: int
     # ???
 
 class CoolingCreate(BaseModel):
@@ -162,7 +153,7 @@ async def get_ram(session: SessionDep):
 @app.get("/storages/")
 async def get_storages(session: SessionDep):
     try:
-        result = await session.execute(select(CPU))
+        result = await session.execute(select(Storage))
         storages = result.scalars().all()
         return {"success": True, "data": storages}
     except Exception as e:
@@ -241,17 +232,17 @@ async def get_ram(ram_name: str, session: SessionDep):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching RAM: {str(e)}")
 
-@app.get("/storages/{storage_name}")
-async def get_storages(storage_name: str, session: SessionDep):
+@app.get("/storages/{storage_type}{number}")
+async def get_storages(storage_type: str, number: int, session: SessionDep):
     try:
         result = await session.execute(
-            select(Storage).where(Storage.name.ilike(f"%{storage_name}%"))
+            select(Storage).where(Storage.name.ilike(f"%{storage_type}%"))
         )
-        cpus = result.scalars().all()
-        if not cpus:
+        storages = result.scalars().all()
+        if not storages:
             raise HTTPException(status_code=404, detail="Storages not found")
 
-        return {"success": True, "data": cpus}
+        return {"success": True, "data": storages}
     except HTTPException:
         raise
     except Exception as e:
@@ -272,6 +263,22 @@ async def get_cooling(cooling_name: str, session: SessionDep):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching cooling: {str(e)}")
+
+@app.get('/storages/{type}/{number}')
+async def get_storage(type: str, number: int, session: SessionDep):
+    try:
+        result = await session.execute(
+            select(Storage).where(Storage.name.ilike(f"%{type}%"))
+        )
+        ram = result.scalars().all()
+        if not ram:
+            raise HTTPException(status_code=404, detail="Storage not found")
+
+        return {"success": True, "data": ram}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching RAM: {str(e)}")
 
 
 @app.get("/health")
